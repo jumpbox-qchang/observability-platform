@@ -32,6 +32,12 @@ helm install tempo grafana/tempo-distributed -f values.yaml -n monitoring
 helm install grafana grafana/grafana -f values.yaml -n monitoring
 ```
 ## Forward Port Testing via Tunnel to Bastion Host
+- Tunnel
 ```
 gcloud compute ssh --zone "asia-southeast1-a" "qchang-prod-bastion-asia-southeast1-public-a" --project "qchang-prod"  -- -NL 3000:localhost:3000
 ```
+- Expose Grafana Port: `3000`
+
+## Apply Vitual service
+- Grafana: `3100`
+- Tempo Distributor: `4318`
