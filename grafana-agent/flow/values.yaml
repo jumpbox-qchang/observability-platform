@@ -1,0 +1,42 @@
+# ref: https://github.com/grafana/agent/tree/main/operations/helm/charts/grafana-agent
+
+agent:
+  clustering:
+    enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 200Mi
+  # tempo port config
+  extraPorts:
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: "TCP"
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: "TCP"
+  configMap:
+    content: |-
+      loki.write "local" {
+        endpoint {
+          url = "http://loki-query-frontend.monitoring.svc:3100/loki/api/v1/push"
+        }
+      }
+
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      loki.source.kubernetes "pods" {
+        targets    = discovery.kubernetes.pods.targets
+        forward_to = [loki.write.local.receiver]
+      }
+
+controller:
+  # -- Type of controller to use for deploying Grafana Agent in the cluster.
+  # Must be one of 'daemonset', 'deployment', or 'statefulset'.
+  type: "deployment"
+  autoscaling:
+    enabled: true
