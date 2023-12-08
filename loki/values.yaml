@@ -230,7 +230,7 @@ loki:
       schema: v11
       index:
         prefix: loki_index_
-        period: 48h
+        period: 24h
 
   # -- Check https://grafana.com/docs/loki/latest/configuration/#storage_config for more info on how to configure storages
   storageConfig:
