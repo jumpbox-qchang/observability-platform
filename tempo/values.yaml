@@ -92,7 +92,8 @@ serviceAccount:
   # -- Image pull secrets for the service account
   imagePullSecrets: []
   # -- Annotations for the service account
-  annotations: {}
+  annotations:
+    iam.gke.io/gcp-service-account: grafana-tempo-prd@qchang-prod.iam.gserviceaccount.com
   automountServiceAccountToken: false
 
 rbac:
@@ -181,8 +182,11 @@ ingester:
   # -- Node selector for ingester pods
   nodeSelector: 
     nodepool: monitoring
-  # -- Tolerations for ingester pods
-  tolerations:
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
   - key: "nodepool"
     operator: "Equal"
     value: "monitoring"
@@ -295,9 +299,17 @@ metricsGenerator:
                 {{- include "tempo.selectorLabels" (dict "ctx" . "component" "metrics-generator") | nindent 12 }}
             topologyKey: topology.kubernetes.io/zone
   # -- Node selector for metrics-generator pods
-  nodeSelector: {}
-  # -- Tolerations for metrics-generator pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   # -- The EmptyDir location where the /var/tempo will be mounted on. Defaults to local disk, can be set to memory.
   walEmptyDir: {}
     ## Here shows how to configure 1Gi memory as emptyDir.
@@ -398,6 +410,8 @@ distributor:
     # -- If type is LoadBalancer limit incoming traffic from IPs.
     loadBalancerSourceRanges: []
   serviceDiscovery:
+    # -- Annotations for distributorDiscovery service
+    annotations: {}
     # -- Labels for distributorDiscovery service
     labels: {}
   # -- The name of the PriorityClass for distributor pods
@@ -444,8 +458,11 @@ distributor:
   # -- Node selector for distributor pods
   nodeSelector: 
     nodepool: monitoring
-  # -- Tolerations for distributor pods
-  tolerations:
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
   - key: "nodepool"
     operator: "Equal"
     value: "monitoring"
@@ -507,8 +524,11 @@ compactor:
   # -- Node selector for compactor pods
   nodeSelector: 
     nodepool: monitoring
-  # -- Tolerations for compactor pods
-  tolerations:
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
   - key: "nodepool"
     operator: "Equal"
     value: "monitoring"
@@ -626,8 +646,11 @@ querier:
   # -- Node selector for querier pods
   nodeSelector: 
     nodepool: monitoring
-  # -- Tolerations for querier pods
-  tolerations:
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
   - key: "nodepool"
     operator: "Equal"
     value: "monitoring"
@@ -825,12 +848,16 @@ queryFrontend:
   # -- Node selector for query-frontend pods
   nodeSelector: 
     nodepool: monitoring
-  # -- Tolerations for query-frontend pods
-  tolerations:
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
   - key: "nodepool"
     operator: "Equal"
     value: "monitoring"
     effect: "NoSchedule"
+  # -- Extra volumes for query-frontend pods
   extraVolumeMounts: []
   # -- Extra volumes for query-frontend deployment
   extraVolumes: []
@@ -933,9 +960,17 @@ enterpriseFederationFrontend:
                 {{- include "tempo.selectorLabels" (dict "ctx" . "component" "federation-frontend") | nindent 12 }}
             topologyKey: failure-domain.beta.kubernetes.io/zone
   # -- Node selector for federation-frontend pods
-  nodeSelector: {}
-  # -- Tolerations for federation-frontend pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   # -- Extra volumes for federation-frontend pods
   extraVolumeMounts: []
   # -- Extra volumes for federation-frontend deployment
@@ -957,12 +992,12 @@ traces:
       receiverConfig: {}
     thriftCompact:
       # -- Enable Tempo to ingest Jaeger Thrift Compact traces
-      enabled: false
+      enabled: true
       # -- Jaeger Thrift Compact receiver config
       receiverConfig: {}
     thriftHttp:
       # -- Enable Tempo to ingest Jaeger Thrift HTTP traces
-      enabled: false
+      enabled: true
       # -- Jaeger Thrift HTTP receiver config
       receiverConfig: {}
   zipkin:
@@ -983,7 +1018,7 @@ traces:
       receiverConfig: {}
   opencensus:
     # -- Enable Tempo to ingest Open Census traces
-    enabled: false
+    enabled: true
     # -- Open Census receiver config
     receiverConfig: {}
   # -- Enable Tempo to ingest traces from Kafka. Reference: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kafkareceiver
@@ -1326,7 +1361,17 @@ storage:
       # -- The supported block versions are specified here https://grafana.com/docs/tempo/latest/configuration/parquet/
       version: null
     # -- The supported storage backends are gcs, s3 and azure, as specified in https://grafana.com/docs/tempo/latest/configuration/#storage
-    backend: local
+    backend: gcs
+    # GCS configuration. Will be used only if value of backend is "gcs"
+    gcs:
+        # Bucket name in gcs
+        bucket_name: grafana-tempo-prd
+    # The worker pool is used primarily when finding traces by id, but is also used by other.
+    pool:
+      # -- Total number of workers pulling jobs from the queue
+      max_workers: 400
+      # -- Length of job queue. imporatant for querier as it queues a job for every block it has to search
+      queue_depth: 20000
   # Settings for the Admin client storage backend and buckets. Only valid is enterprise.enabled is true.
   admin:
     # -- The supported storage backends are gcs, s3 and azure, as specified in https://grafana.com/docs/enterprise-traces/latest/config/reference/#admin_client_config
@@ -1429,7 +1474,7 @@ metaMonitoring:
     # -- If enabled, ServiceMonitor resources for Prometheus Operator are created
     enabled: false
     # -- Alternative namespace for ServiceMonitor resources
-    namespace: null
+    namespace: monitoring
     # -- Namespace selector for ServiceMonitor resources
     namespaceSelector: {}
     # -- ServiceMonitor annotations
@@ -1520,7 +1565,7 @@ metaMonitoring:
             app.kubernetes.io/name: kube-state-metrics
 
     # -- Sets the namespace of the resources. Leave empty or unset to use the same namespace as the Helm release.
-    namespace: ''
+    namespace: 'monitoring'
 
     # -- Labels to add to all monitoring.grafana.com custom resources.
     # Does not affect the ServiceMonitors for kubernetes metrics; use serviceMonitor.labels for that.
@@ -1661,9 +1706,17 @@ gateway:
                 {{- include "tempo.selectorLabels" (dict "ctx" . "component" "gateway") | nindent 12 }}
             topologyKey: topology.kubernetes.io/zone
   # -- Node selector for gateway pods
-  nodeSelector: {}
-  # -- Tolerations for gateway pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   # Gateway service configuration
   service:
     # -- Port of the gateway service
@@ -1804,7 +1857,7 @@ gateway:
             proxy_pass       http://{{ include "tempo.resourceName" (dict "ctx" . "component" "distributor") }}.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain }}:9411/spans;
           }
 
-          location = /otlp/v1/traces {
+          location = /v1/traces {
             proxy_pass       http://{{ include "tempo.resourceName" (dict "ctx" . "component" "distributor") }}.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain }}:4318/v1/traces;
           }
 
@@ -1849,7 +1902,7 @@ enterprise:
     # -- Grafana Enterprise Metrics container image repository. Note: for Grafana Tempo use the value 'image.repository'
     repository: grafana/enterprise-traces
     # -- Grafana Enterprise Metrics container image tag. Note: for Grafana Tempo use the value 'image.tag'
-    tag: v2.1.0
+    tag: v2.2.1
     # Note: pullPolicy and optional pullSecrets are set in toplevel 'image' section, not here
 
 # In order to use Grafana Enterprise Traces features, you will need to provide the contents of your Grafana Enterprise Traces
@@ -1904,8 +1957,8 @@ adminApi:
 
   podLabels: {}
   podAnnotations: {}
-
-  nodeSelector: {}
+  nodeSelector: 
+    nodepool: monitoring
   # -- topologySpread for admin-api pods. Passed through `tpl` and, thus, to be configured as string
   # @default -- Defaults to allow skew no more then 1 node per AZ
   topologySpreadConstraints: |
@@ -1998,7 +2051,8 @@ enterpriseGateway:
   # Pod Disruption Budget
   podDisruptionBudget: {}
 
-  nodeSelector: {}
+  nodeSelector: 
+    nodepool: monitoring
   # -- topologySpread for enterprise-gateway pods. Passed through `tpl` and, thus, to be configured as string
   # @default -- Defaults to allow skew no more then 1 node per AZ
   topologySpreadConstraints: |

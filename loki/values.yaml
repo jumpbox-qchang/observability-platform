@@ -117,10 +117,10 @@ loki:
           kvstore:
             store: memberlist
           replication_factor: 1
-      chunk_idle_period: 30m
+      chunk_idle_period: 48h
       chunk_block_size: 262144
       chunk_encoding: snappy
-      chunk_retain_period: 1m
+      chunk_retain_period: 48h
       max_transfer_retries: 0
       wal:
         dir: /var/loki/wal
@@ -155,7 +155,7 @@ loki:
       file: /var/{{ include "loki.name" . }}-runtime/runtime.yaml
 
     chunk_store_config:
-      max_look_back_period: 0s
+      max_look_back_period: 48h
       {{- if .Values.memcachedChunks.enabled }}
       chunk_cache_config:
         embedded_cache:
@@ -172,8 +172,8 @@ loki:
       {{- end }}
 
     table_manager:
-      retention_deletes_enabled: false
-      retention_period: 0s
+      retention_deletes_enabled: true
+      retention_period: 168h
 
     query_range:
       align_queries_with_step: true
@@ -230,7 +230,7 @@ loki:
       schema: v11
       index:
         prefix: loki_index_
-        period: 24h
+        period: 48h
 
   # -- Check https://grafana.com/docs/loki/latest/configuration/#storage_config for more info on how to configure storages
   storageConfig:
@@ -477,9 +477,17 @@ ingester:
   # -- Max Surge for ingester pods
   maxSurge: 0
   # -- Node selector for ingester pods
-  nodeSelector: {}
-  # -- Tolerations for ingester pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   # -- readiness probe settings for ingester pods. If empty, use `loki.readinessProbe`
   readinessProbe: {}
   # -- liveness probe settings for ingester pods. If empty use `loki.livenessProbe`
@@ -601,9 +609,17 @@ distributor:
   # -- Max Surge for distributor pods
   maxSurge: 0
   # -- Node selector for distributor pods
-  nodeSelector: {}
-  # -- Tolerations for distributor pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
     # -- Adds the appProtocol field to the distributor service. This allows distributor to work with istio protocol selection.
   appProtocol:
     # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
@@ -710,9 +726,17 @@ querier:
   # -- Max Surge for querier pods
   maxSurge: 0
   # -- Node selector for querier pods
-  nodeSelector: {}
-  # -- Tolerations for querier pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   # -- DNSConfig for querier pods
   dnsConfig: {}
   persistence:
@@ -821,9 +845,17 @@ queryFrontend:
   # -- Pod Disruption Budget maxUnavailable
   maxUnavailable: null
   # -- Node selector for query-frontend pods
-  nodeSelector: {}
-  # -- Tolerations for query-frontend pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   # -- Adds the appProtocol field to the queryFrontend service. This allows queryFrontend to work with istio protocol selection.
   appProtocol:
     # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
@@ -892,9 +924,17 @@ queryScheduler:
   # -- Pod Disruption Budget maxUnavailable
   maxUnavailable: 1
   # -- Node selector for query-scheduler pods
-  nodeSelector: {}
-  # -- Tolerations for query-scheduler pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
   appProtocol:
     grpc: ""
@@ -958,9 +998,17 @@ tableManager:
                 {{- include "loki.tableManagerSelectorLabels" . | nindent 12 }}
             topologyKey: failure-domain.beta.kubernetes.io/zone
   # -- Node selector for table-manager pods
-  nodeSelector: {}
-  # -- Tolerations for table-manager pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
 
 # Use either this ingress or the gateway, but not both at once.
 # If you enable this, make sure to disable the gateway.
@@ -1106,9 +1154,17 @@ gateway:
   # -- Pod Disruption Budget maxUnavailable
   maxUnavailable: null
   # -- Node selector for gateway pods
-  nodeSelector: {}
-  # -- Tolerations for gateway pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   # -- DNSConfig for gateway pods
   dnsConfig: {}
   # Gateway service configuration
@@ -1378,9 +1434,17 @@ compactor:
   # -- Grace period to allow the compactor to shutdown before it is killed
   terminationGracePeriodSeconds: 30
   # -- Node selector for compactor pods
-  nodeSelector: {}
-  # -- Tolerations for compactor pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
   appProtocol:
     grpc: ""
@@ -1477,9 +1541,17 @@ ruler:
   # -- Pod Disruption Budget maxUnavailable
   maxUnavailable: null
   # -- Node selector for ruler pods
-  nodeSelector: {}
-  # -- Tolerations for ruler pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   # -- DNSConfig for ruler pods
   dnsConfig: {}
   persistence:
@@ -1630,9 +1702,17 @@ indexGateway:
   # -- Pod Disruption Budget maxUnavailable
   maxUnavailable: null
   # -- Node selector for index-gateway pods
-  nodeSelector: {}
-  # -- Tolerations for index-gateway pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   persistence:
     # -- Enable creating PVCs which is required when using boltdb-shipper
     enabled: false
@@ -1769,9 +1849,17 @@ memcachedChunks:
   # -- Pod Disruption Budget maxUnavailable
   maxUnavailable: null
   # -- Node selector for memcached-chunks pods
-  nodeSelector: {}
-  # -- Tolerations for memcached-chunks pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   persistence:
     # -- Enable creating PVCs which will persist cached data through restarts
     enabled: false
@@ -1838,9 +1926,17 @@ memcachedFrontend:
   # -- Pod Disruption Budget maxUnavailable
   maxUnavailable: 1
   # -- Node selector for memcached-frontend pods
-  nodeSelector: {}
-  # -- Tolerations for memcached-frontend pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   persistence:
     # -- Enable creating PVCs which will persist cached data through restarts
     enabled: false
@@ -1903,9 +1999,17 @@ memcachedIndexQueries:
   # -- Pod Disruption Budget maxUnavailable
   maxUnavailable: null
   # -- Node selector for memcached-index-queries pods
-  nodeSelector: {}
-  # -- Tolerations for memcached-index-queries pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   persistence:
     # -- Enable creating PVCs which will persist cached data through restarts
     enabled: false
@@ -1968,9 +2072,17 @@ memcachedIndexWrites:
   # -- Pod Disruption Budget maxUnavailable
   maxUnavailable: null
   # -- Node selector for memcached-index-writes pods
-  nodeSelector: {}
-  # -- Tolerations for memcached-index-writes pods
-  tolerations: []
+  nodeSelector: 
+    nodepool: monitoring
+
+  ## Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
   persistence:
     # -- Enable creating PVCs which will persist cached data through restarts
     enabled: false
