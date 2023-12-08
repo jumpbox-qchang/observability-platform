@@ -30,7 +30,35 @@ agent:
     # -- Create a new ConfigMap for the config file.
     create: true
     # -- Content to assign to the new ConfigMap.  This is passed into `tpl` allowing for templating from values.
-    content: ''
+    content: |-
+      loki.write "local" {
+        endpoint {
+          url = "http://loki-distributor.monitoring.svc:3100/loki/api/v1/push"
+        }
+      }
+
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      loki.source.kubernetes "pods" {
+        targets    = discovery.kubernetes.pods.targets
+        forward_to = [loki.process.drop_if_no_level.receiver]
+      }
+
+      loki.process "drop_if_no_level" {
+        forward_to = [loki.write.local.receiver]
+
+        stage.json {
+          expressions = {
+            output  = "log",
+            level   = "level",
+            time    = "time",
+            file    = "file",
+            message = "message",
+          }
+        }
+      }
 
     # -- Name of existing ConfigMap to use. Used when create is false.
     name: null
@@ -40,7 +68,7 @@ agent:
   clustering:
     # -- Deploy agents in a cluster to allow for load distribution. Only
     # applies when agent.mode=flow.
-    enabled: false
+    enabled: true
 
   # -- Path to where Grafana Agent stores data (for example, the Write-Ahead Log).
   # By default, data is lost between reboots.
@@ -70,11 +98,15 @@ agent:
   extraArgs: []
 
   # -- Extra ports to expose on the Agent
-  extraPorts: []
-  # - name: "faro"
-  #   port: 12347
-  #   targetPort: 12347
-  #   protocol: "TCP"
+  extraPorts:
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: "TCP"
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: "TCP"
 
   mounts:
     # -- Mount /var/log from the host into the container for log collection.
@@ -91,7 +123,10 @@ agent:
   securityContext: {}
 
   # -- Resource requests and limits to apply to the Grafana Agent container.
-  resources: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 200Mi
 
 image:
   # -- Grafana Agent image registry (defaults to docker.io)
