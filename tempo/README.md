@@ -22,6 +22,7 @@ kubectl create ns monitoring
 References: [Link](https://github.com/grafana/helm-charts/blob/main/charts/grafana/README.md)
 ```
 helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
 ```
 ```
 helm install tempo grafana/tempo-distributed -f values.yaml -n monitoring
