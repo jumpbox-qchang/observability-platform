@@ -117,10 +117,11 @@ loki:
           kvstore:
             store: memberlist
           replication_factor: 1
-      chunk_idle_period: 48h
-      chunk_block_size: 262144
+      chunk_idle_period: 24h
+      max_chunk_age: 24h
+      chunk_target_size: 1048576
       chunk_encoding: snappy
-      chunk_retain_period: 48h
+      chunk_retain_period: 24h
       max_transfer_retries: 0
       wal:
         dir: /var/loki/wal
@@ -155,7 +156,7 @@ loki:
       file: /var/{{ include "loki.name" . }}-runtime/runtime.yaml
 
     chunk_store_config:
-      max_look_back_period: 48h
+      max_look_back_period: 24h
       {{- if .Values.memcachedChunks.enabled }}
       chunk_cache_config:
         embedded_cache:
@@ -207,7 +208,9 @@ loki:
       tail_proxy_url: http://{{ include "loki.querierFullname" . }}:3100
 
     compactor:
-      shared_store: filesystem
+      retention_enabled: true
+      working_directory: /var/loki/index
+      shared_store: gcs
 
     ruler:
       storage:
@@ -226,7 +229,7 @@ loki:
     configs:
     - from: 2020-09-07
       store: boltdb-shipper
-      object_store: filesystem
+      object_store: gcs
       schema: v11
       index:
         prefix: loki_index_
@@ -235,12 +238,14 @@ loki:
   # -- Check https://grafana.com/docs/loki/latest/configuration/#storage_config for more info on how to configure storages
   storageConfig:
     boltdb_shipper:
-      shared_store: filesystem
+      shared_store: gcs
       active_index_directory: /var/loki/index
       cache_location: /var/loki/cache
       cache_ttl: 168h
-    filesystem:
-      directory: /var/loki/chunks
+    # filesystem:
+    #   directory: /var/loki/chunks
+    gcs:
+        bucket_name: grafana-loki-nonprd
 # -- Uncomment to configure each storage individually
 #   azure: {}
 #   gcs: {}
@@ -264,7 +269,8 @@ serviceAccount:
   # -- Labels for the service account
   labels: {}
   # -- Annotations for the service account
-  annotations: {}
+  annotations: 
+    iam.gke.io/gcp-service-account: grafana-loki-nonprd@qchang-dev.iam.gserviceaccount.com
   # -- Set this toggle to false to opt out of automounting API credentials for the service account
   automountServiceAccountToken: true
 
@@ -1376,7 +1382,7 @@ gateway:
 # Configuration for the compactor
 compactor:
   # -- Specifies whether compactor should be enabled
-  enabled: false
+  enabled: true
   # -- hostAliases to add
   hostAliases: []
   #  - ip: 1.2.3.4

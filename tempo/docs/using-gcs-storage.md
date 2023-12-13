@@ -1,5 +1,11 @@
 ## In case using external storage
 
+# set up: bucket 
+
+```bash
+gcloud storage buckets create gs://grafana-tempo-prd --project=qchang-prod --default-storage-class=STANDARD --location=ASIA-SOUTHEAST1 --uniform-bucket-level-access
+```
+
 # set up: services account
 
 ```bash

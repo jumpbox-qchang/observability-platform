@@ -4,6 +4,7 @@ References: [Link](https://github.com/grafana/helm-charts/blob/main/charts/grafa
 ## Prerequisite Installation
 ```bash
 helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
 ```
 
 ## Install loki (only 1st installation)
