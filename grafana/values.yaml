@@ -400,7 +400,7 @@ initChownData:
 
 # Administrator credentials when not using an existing secret (see below)
 adminUser: admin
-# adminPassword: strongpassword
+adminPassword: HF,WG-7s,rh>)>reagUUA2nrXvg]WL
 
 # Use an existing secret for the admin user.
 admin:
@@ -569,11 +569,33 @@ datasources:
       - name: Loki
         type: loki
         access: proxy
+        uid: loki
         url: http://loki-query-frontend.monitoring:3100
+        jsonData:
+          derivedFields:
+            - datasourceUid: tempo
+              matcherRegex: '"[tT]race[_]?[[iI][dD]":\s*"([a-f0-9]+)"'
+              name: traceID
+              url: '$${__value.raw}'
       - name: Tempo
         type: tempo
         access: proxy
+        uid: tempo
         url: http://tempo-query-frontend.monitoring:3100
+        jsonData:
+          nodeGraph:
+            enabled: true
+          serviceMap:
+            datasourceUid: 'Mimir'
+          tracesToLogsV2:
+            datasourceUid: 'loki'
+            spanStartTimeShift: '1h'
+            spanEndTimeShift: '-1h'
+            # tags: ['job', 'instance', 'pod', 'namespace']
+            filterByTraceID: false
+            filterBySpanID: false
+            customQuery: false
+            # query: 'instance="${__span.tags["instance.name"]}"'
 
 ## Configure grafana alerting (can be templated)
 ## ref: http://docs.grafana.org/administration/provisioning/#alerting
