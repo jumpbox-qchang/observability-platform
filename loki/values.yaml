@@ -245,7 +245,7 @@ loki:
     # filesystem:
     #   directory: /var/loki/chunks
     gcs:
-        bucket_name: grafana-loki-nonprd
+        bucket_name: grafana-loki-prd
 # -- Uncomment to configure each storage individually
 #   azure: {}
 #   gcs: {}
@@ -270,7 +270,7 @@ serviceAccount:
   labels: {}
   # -- Annotations for the service account
   annotations: 
-    iam.gke.io/gcp-service-account: grafana-loki-nonprd@qchang-dev.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: grafana-loki-prd@qchang-prod.iam.gserviceaccount.com
   # -- Set this toggle to false to opt out of automounting API credentials for the service account
   automountServiceAccountToken: true
 
