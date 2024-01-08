@@ -174,7 +174,7 @@ loki:
       {{- end }}
 
     table_manager:
-      retention_deletes_enabled: true
+      retention_deletes_enabled: false
       retention_period: 168h
 
     query_range:
@@ -210,8 +210,6 @@ loki:
 
     compactor:
       retention_enabled: true
-      retention_delete_delay: 2h
-      retention_delete_worker_count: 150
       working_directory: /var/loki/index
       shared_store: gcs
 
