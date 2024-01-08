@@ -1,4 +1,4 @@
-# Install Grafana Tempo
+# Install Grafana Loki
 References: [Link](https://github.com/grafana/helm-charts/blob/main/charts/grafana/README.md)
 
 ## Prerequisite Installation
