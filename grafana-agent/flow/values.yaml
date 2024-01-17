@@ -60,6 +60,61 @@ agent:
         }
       }
 
+      otelcol.receiver.otlp "otlp_receiver" {
+        http {
+          endpoint = "127.0.0.1:4318"
+        }
+
+        output {
+          traces  = [otelcol.processor.batch.default.input]
+        }
+      }
+
+      otelcol.processor.batch "default" {
+        output {
+          traces = [otelcol.processor.span.rename_span.input]
+        }
+      }
+
+      otelcol.processor.attributes "default" {
+        action {
+          key = "service.name"
+          action = "upsert"
+          value = "test"
+        }
+        
+        output {
+          traces = [otelcol.exporter.otlp.default.input]
+        }
+      }
+
+      otelcol.processor.span "rename_span" {
+        include {
+          match_type = "regexp"
+          span_names = ["^(.*?)"]
+        }
+
+        name {
+          to_attributes {
+            rules = ["(?P<krakend>.*?)$"]
+          }
+        }
+
+        output {
+          traces = [otelcol.exporter.otlp.default.input]
+        }
+      }
+
+      otelcol.exporter.otlp  "default" {
+          client {
+              endpoint = "http://tempo-distributor.monitoring:4317"
+              tls {
+                  insecure             = true
+                  insecure_skip_verify = true
+              }
+          }
+      }
+
     # -- Name of existing ConfigMap to use. Used when create is false.
     name: null
     # -- Key in ConfigMap to get config from.
