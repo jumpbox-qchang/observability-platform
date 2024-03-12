@@ -60,10 +60,19 @@ agent:
         }
       }
 
-      otelcol.receiver.otlp "otlp_receiver" {
-        http {
-          endpoint = "127.0.0.1:4318"
+      otelcol.receiver.jaeger "jaeger_receiver" {
+        protocols {
+          thrift_http {}
         }
+
+        output {
+          traces  = [otelcol.processor.batch.default.input]
+        }
+      }
+
+      otelcol.receiver.otlp "otlp_receiver" {
+        grpc {}
+        http {}
 
         output {
           traces  = [otelcol.processor.batch.default.input]
@@ -72,28 +81,29 @@ agent:
 
       otelcol.processor.batch "default" {
         output {
-          traces = [otelcol.processor.span.rename_span.input]
+          traces = [otelcol.exporter.otlp.default.input]
         }
       }
 
-      otelcol.processor.attributes "default" {
+      otelcol.processor.attributes "add_span_attributes" {
         action {
-          key = "service.name"
+          key = "krakend"
           action = "upsert"
-          value = "test"
+          value = "subscribe"
         }
-        
+
+        action {
+          key = "test.span"
+          action = "insert"
+          value = "test-service"
+        }
+
         output {
           traces = [otelcol.exporter.otlp.default.input]
         }
       }
 
       otelcol.processor.span "rename_span" {
-        include {
-          match_type = "regexp"
-          span_names = ["^(.*?)"]
-        }
-
         name {
           to_attributes {
             rules = ["(?P<krakend>.*?)$"]
@@ -105,9 +115,9 @@ agent:
         }
       }
 
-      otelcol.exporter.otlp  "default" {
+      otelcol.exporter.otlp "default" {
           client {
-              endpoint = "http://tempo-distributor.monitoring:4317"
+              endpoint = "tempo-distributor.monitoring:4317"
               tls {
                   insecure             = true
                   insecure_skip_verify = true
@@ -153,14 +163,23 @@ agent:
   extraArgs: []
 
   # -- Extra ports to expose on the Agent
+  # tempo port config
   extraPorts:
-    - name: otlp-http
-      port: 4318
-      targetPort: 4318
+    - name: thrift-http
+      port: 14268
+      targetPort: 14268
+      protocol: "TCP"
+    - name: thrift-udp
+      port: 6831
+      targetPort: 6831
       protocol: "TCP"
     - name: otlp-grpc
       port: 4317
       targetPort: 4317
+      protocol: "TCP"
+     - name: otlp-http
+      port: 4318
+      targetPort: 4318
       protocol: "TCP"
 
   mounts:

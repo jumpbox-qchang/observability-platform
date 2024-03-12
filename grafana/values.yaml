@@ -283,13 +283,17 @@ resources: {}
 ## Node labels for pod assignment
 ## ref: https://kubernetes.io/docs/user-guide/node-selection/
 #
-nodeSelector: {}
+nodeSelector:
+  nodepool: monitoring
 
 ## Tolerations for pod assignment
 ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 ##
-tolerations: []
-
+tolerations:
+- key: "nodepool"
+  operator: "Equal"
+  value: "monitoring"
+  effect: "NoSchedule"
 ## Affinity for pod assignment (evaluated as template)
 ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
 ##
@@ -400,7 +404,7 @@ initChownData:
 
 # Administrator credentials when not using an existing secret (see below)
 adminUser: admin
-adminPassword: HF,WG-7s,rh>)>reagUUA2nrXvg]WL
+adminPassword: 9t}G*Hs?)qPVx!VZbN1~cQM5GTw@22
 
 # Use an existing secret for the admin user.
 admin:
@@ -1199,12 +1203,17 @@ imageRenderer:
   ## Node labels for pod assignment
   ## ref: https://kubernetes.io/docs/user-guide/node-selection/
   #
-  nodeSelector: {}
+  nodeSelector: 
+    nodepool: monitoring
 
   ## Tolerations for pod assignment
   ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
   ##
-  tolerations: []
+  tolerations: 
+  - key: "nodepool"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
 
   ## Affinity for pod assignment (evaluated as template)
   ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
