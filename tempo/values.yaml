@@ -93,7 +93,7 @@ serviceAccount:
   imagePullSecrets: []
   # -- Annotations for the service account
   annotations:
-    iam.gke.io/gcp-service-account: grafana-tempo-prd@qchang-prod.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: grafana-tempo-nonprd@qchang-dev.iam.gserviceaccount.com
   automountServiceAccountToken: false
 
 rbac:
@@ -1002,7 +1002,7 @@ traces:
       receiverConfig: {}
   zipkin:
     # -- Enable Tempo to ingest Zipkin traces
-    enabled: false
+    enabled: true
     # -- Zipkin receiver config
     receiverConfig: {}
   otlp:
@@ -1355,6 +1355,10 @@ server:
 #       storage_account_name:
 #       storage_account_key:
 storage:
+  # Setting Secret
+  secret:
+    name: tempostack-dev-gcs
+    type: gcs
   trace:
     # Settings for the block storage backend and buckets.
     block:
@@ -1365,7 +1369,7 @@ storage:
     # GCS configuration. Will be used only if value of backend is "gcs"
     gcs:
         # Bucket name in gcs
-        bucket_name: grafana-tempo-prd
+        bucket_name: grafana-tempo-nonprd
     # The worker pool is used primarily when finding traces by id, but is also used by other.
     pool:
       # -- Total number of workers pulling jobs from the queue
