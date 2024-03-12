@@ -60,6 +60,71 @@ agent:
         }
       }
 
+      otelcol.receiver.jaeger "jaeger_receiver" {
+        protocols {
+          thrift_http {}
+        }
+
+        output {
+          traces  = [otelcol.processor.batch.default.input]
+        }
+      }
+
+      otelcol.receiver.otlp "otlp_receiver" {
+        grpc {}
+        http {}
+
+        output {
+          traces  = [otelcol.processor.batch.default.input]
+        }
+      }
+
+      otelcol.processor.batch "default" {
+        output {
+          traces = [otelcol.exporter.otlp.default.input]
+        }
+      }
+
+      otelcol.processor.attributes "add_span_attributes" {
+        action {
+          key = "krakend"
+          action = "upsert"
+          value = "subscribe"
+        }
+
+        action {
+          key = "test.span"
+          action = "insert"
+          value = "test-service"
+        }
+
+        output {
+          traces = [otelcol.exporter.otlp.default.input]
+        }
+      }
+
+      otelcol.processor.span "rename_span" {
+        name {
+          to_attributes {
+            rules = ["(?P<krakend>.*?)$"]
+          }
+        }
+
+        output {
+          traces = [otelcol.exporter.otlp.default.input]
+        }
+      }
+
+      otelcol.exporter.otlp "default" {
+          client {
+              endpoint = "tempo-distributor.monitoring:4317"
+              tls {
+                  insecure             = true
+                  insecure_skip_verify = true
+              }
+          }
+      }
+
     # -- Name of existing ConfigMap to use. Used when create is false.
     name: null
     # -- Key in ConfigMap to get config from.
@@ -98,14 +163,23 @@ agent:
   extraArgs: []
 
   # -- Extra ports to expose on the Agent
+  # tempo port config
   extraPorts:
-    - name: otlp-http
-      port: 4318
-      targetPort: 4318
+    - name: thrift-http
+      port: 14268
+      targetPort: 14268
+      protocol: "TCP"
+    - name: thrift-udp
+      port: 6831
+      targetPort: 6831
       protocol: "TCP"
     - name: otlp-grpc
       port: 4317
       targetPort: 4317
+      protocol: "TCP"
+     - name: otlp-http
+      port: 4318
+      targetPort: 4318
       protocol: "TCP"
 
   mounts:
@@ -182,7 +256,9 @@ configReloader:
 controller:
   # -- Type of controller to use for deploying Grafana Agent in the cluster.
   # Must be one of 'daemonset', 'deployment', or 'statefulset'.
-  type: 'daemonset'
+  type: "deployment"
+  autoscaling:
+    enabled: false
 
   # -- Number of pods to deploy. Ignored when controller.type is 'daemonset'.
   replicas: 1
