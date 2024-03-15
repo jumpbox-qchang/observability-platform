@@ -1,9 +1,10 @@
 # observability-platform
 
 
-#(Topic) ใช้ GCS object storage ในการเก็บข้อมูล logs ในระยะยาว
+## (Topic) Considered Options 
+ใช้ GCS object storage ในการเก็บข้อมูล logs ในระยะยาว
 
-##(Sub Topic) Context and Problem Statement
+## (Sub Topic) Context and Problem Statement
 
 ค่าใช้จ่ายในการเก็บรักษาข้อมูล logs ในระยะยาว (1 ถึง 3 ปี)
 
