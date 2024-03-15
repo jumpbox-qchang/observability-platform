@@ -89,6 +89,9 @@ loki:
     http_listen_port: 3100
   # -- Config file contents for Loki
   # @default -- See values.yaml
+  # -- Config Longterm retention for Log Data in GCS
+  # -- retention_period: parameters นี้ใช้กำหนดระยะเวลาจัดเก็บข้อมูล (มีหน่วยเป็น h ชั่วโมง)
+  # -- max_query_lookback: parameters ใช้จำกัดระยะเวลาในการสืบค้นข้อมูล metadata ย้อนหลัง (มีหน่วยเป็น h ชั่วโมง)
   config: |
     auth_enabled: false
 
@@ -127,7 +130,8 @@ loki:
         dir: /var/loki/wal
 
     limits_config:
-      retention_period: 744h
+      retention_period: 26352h
+      max_query_lookback: 26326h
       enforce_metric_name: false
       reject_old_samples: true
       reject_old_samples_max_age: 168h
@@ -157,7 +161,7 @@ loki:
       file: /var/{{ include "loki.name" . }}-runtime/runtime.yaml
 
     chunk_store_config:
-      max_look_back_period: 24h
+      max_look_back_period: 2256h
       {{- if .Values.memcachedChunks.enabled }}
       chunk_cache_config:
         embedded_cache:
