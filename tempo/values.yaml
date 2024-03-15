@@ -1002,7 +1002,7 @@ traces:
       receiverConfig: {}
   zipkin:
     # -- Enable Tempo to ingest Zipkin traces
-    enabled: false
+    enabled: true
     # -- Zipkin receiver config
     receiverConfig: {}
   otlp:
@@ -1355,6 +1355,10 @@ server:
 #       storage_account_name:
 #       storage_account_key:
 storage:
+  # # Setting Secret
+  # secret:
+  #   name: tempostack-gcs
+  #   type: gcs
   trace:
     # Settings for the block storage backend and buckets.
     block:
